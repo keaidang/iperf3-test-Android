@@ -68,6 +68,9 @@ class SpeedTestEngine(private val context: Context) {
             message.contains("no route to host", ignoreCase = true) -> "无法路由到主机，请检查网络连接"
             message.contains("error=2", ignoreCase = true) -> "找不到 iperf3 可执行文件"
             message.contains("error=13", ignoreCase = true) -> "没有执行权限"
+            message.contains("unable to read", ignoreCase = true) || message.contains("read:", ignoreCase = true) || message.contains("read failed", ignoreCase = true) || message.contains("read error", ignoreCase = true) || message.contains("connection reset", ignoreCase = true) -> "数据读取失败，连接已被重置或意外中断"
+            message.contains("unable to write", ignoreCase = true) || message.contains("broken pipe", ignoreCase = true) || message.contains("write failed", ignoreCase = true) -> "数据写入/发送失败，连接已断开"
+            message.contains("control socket has closed unexpectedly", ignoreCase = true) -> "控制连接异常关闭，测试已中断"
             else -> message
         }
     }
