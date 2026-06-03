@@ -1,0 +1,6 @@
+{
+  "name": "Pure iPerf3",
+  "description": "A pure, ad-free iperf3 client and server speed testing tool with real-time charts and history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

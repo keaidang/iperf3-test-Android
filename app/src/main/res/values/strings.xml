@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Pure iPerf3</string>
+    <string name="client">Client</string>
+    <string name="server">Server</string>
+    <string name="server_ip_hint">Server IP / Hostname</string>
+    <string name="port_hint">Port (Default 5201)</string>
+    <string name="listen_port_hint">Listen Port (Default 5201)</string>
+    <string name="upload">Upload</string>
+    <string name="download">Download</string>
+    <string name="threads_count">Threads: %1$d</string>
+    <string name="start_test">Start Test</string>
+    <string name="start_listener">Start Listener</string>
+    <string name="stop_test">Stop Test</string>
+    <string name="connecting">Connecting...</string>
+    <string name="bandwidth">Bandwidth</string>
+    <string name="average">Average</string>
+    <string name="max">Max</string>
+    <string name="history">History</string>
+    <string name="no_history">No test history available.</string>
+    <string name="clear_history">Clear History</string>
+</resources>

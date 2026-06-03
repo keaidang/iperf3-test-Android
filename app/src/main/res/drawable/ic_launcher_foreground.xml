@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer speedometer arc -->
+    <path
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M30 78 A 30 30 0 1 1 78 78"
+        android:strokeColor="#9ECAFF" />
+        
+    <!-- Outer dashed/segment speed indicator -->
+    <path
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M24 78 A 36 36 0 1 1 84 78"
+        android:strokeColor="#FFFFFF" />
+
+    <!-- Bidirectional arrows inside the dial -->
+    <!-- Up arrow in neon blue, representing Upload -->
+    <path
+        android:fillColor="#9ECAFF"
+        android:pathData="M44,54 L44,40 L37,47 L34,44 L47,31 L60,44 L57,47 L50,40 L50,54 Z" />
+
+    <!-- Down arrow in electric violet, representing Download -->
+    <path
+        android:fillColor="#D6BEE4"
+        android:pathData="M64,52 L64,66 L71,59 L74,62 L61,75 L48,62 L51,59 L58,66 L58,52 Z" />
+
+    <!-- Sleek speed dots/particles -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32 40 A 2 2 0 1 1 32 36 A 2 2 0 1 1 32 40" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M76 40 A 2 2 0 1 1 76 36 A 2 2 0 1 1 76 40" />
+        
+</vector>
