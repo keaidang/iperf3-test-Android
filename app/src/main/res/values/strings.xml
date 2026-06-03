@@ -34,4 +34,6 @@
     <string name="max_bandwidth">Max Bandwidth:</string>
     <string name="interval_details">Interval Details</string>
     <string name="close">Close</string>
+    <string name="interval_header">Interval</string>
+    <string name="bitrate_header">Bitrate</string>
 </resources>

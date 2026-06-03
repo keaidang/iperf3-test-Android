@@ -34,4 +34,6 @@
     <string name="max_bandwidth">峰值带宽:</string>
     <string name="interval_details">区间详情</string>
     <string name="close">关闭</string>
+    <string name="interval_header">测试区间</string>
+    <string name="bitrate_header">传输速率</string>
 </resources>
