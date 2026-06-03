@@ -16,9 +16,11 @@
     <string name="bandwidth">实时带宽</string>
     <string name="average">平均值</string>
     <string name="max">峰值</string>
+    <string name="min">最小值</string>
     <string name="history">历史记录</string>
     <string name="no_history">暂无测试记录</string>
     <string name="clear_history">清空记录</string>
+    <string name="udp_bandwidth_hint">UDP 带宽限制 (0 表示无限制，例如 10M, 100M)</string>
     <string name="waiting_for_client">等待客户端连接中...</string>
     <string name="avg_bandwidth">平均:</string>
     <string name="min_label">最小值:</string>

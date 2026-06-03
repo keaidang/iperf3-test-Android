@@ -16,9 +16,11 @@
     <string name="bandwidth">Bandwidth</string>
     <string name="average">Average</string>
     <string name="max">Max</string>
+    <string name="min">Min</string>
     <string name="history">History</string>
     <string name="no_history">No test history available.</string>
     <string name="clear_history">Clear History</string>
+    <string name="udp_bandwidth_hint">UDP Bandwidth Limit (0 for unlimited, e.g. 10M, 100M)</string>
     <string name="waiting_for_client">Waiting for client connection...</string>
     <string name="avg_bandwidth">Avg:</string>
     <string name="min_label">Min:</string>

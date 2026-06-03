@@ -120,7 +120,7 @@ class SpeedTestEngine(private val context: Context) {
         }
     }
 
-    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean, onComplete: (SpeedTestState) -> Unit) {
+    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean, udpBandwidth: String, onComplete: (SpeedTestState) -> Unit) {
         val job = Job()
         activeJob = job
         _state.update { SpeedTestState(isRunning = true, isServer = false) }
@@ -136,7 +136,7 @@ class SpeedTestEngine(private val context: Context) {
                 if (isUdp) {
                     args.add("-u")
                     args.add("-b")
-                    args.add("0") // Unlimited bandwidth for UDP to measure max capacity
+                    args.add(if (udpBandwidth.isBlank()) "0" else udpBandwidth)
                 }
                 
                 val pb = ProcessBuilder(args)

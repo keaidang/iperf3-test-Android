@@ -173,14 +173,15 @@ fun MainScreen(viewModel: SpeedTestViewModel, modifier: Modifier = Modifier) {
                         isClientMode = it 
                         viewModel.isClientMode = it
                     },
-                    onStartClient = { host, port, up, threads, dur, udp ->
+                    onStartClient = { host, port, up, threads, dur, udp, udpBand ->
                         viewModel.host = host
                         viewModel.port = port.toString()
                         viewModel.isUpload = up
                         viewModel.threadCount = threads.toFloat()
                         viewModel.duration = dur.toFloat()
                         viewModel.isUdp = udp
-                        viewModel.startClient(host, port, up, threads, dur, udp)
+                        viewModel.udpBandwidth = udpBand
+                        viewModel.startClient(host, port, up, threads, dur, udp, udpBand)
                     },
                     onStartServer = { port ->
                         viewModel.port = port.toString()
@@ -225,7 +226,7 @@ fun TestConfigurationView(
     viewModel: SpeedTestViewModel,
     isClientMode: Boolean,
     onModeChange: (Boolean) -> Unit,
-    onStartClient: (String, Int, Boolean, Int, Int, Boolean) -> Unit,
+    onStartClient: (String, Int, Boolean, Int, Int, Boolean, String) -> Unit,
     onStartServer: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -235,6 +236,7 @@ fun TestConfigurationView(
     var threadCount by remember { mutableFloatStateOf(viewModel.threadCount) }
     var isUdp by remember { mutableStateOf(viewModel.isUdp) }
     var duration by remember { mutableFloatStateOf(viewModel.duration) }
+    var udpBandwidth by remember { mutableStateOf(viewModel.udpBandwidth) }
 
     Column(
         modifier = modifier
@@ -303,6 +305,17 @@ fun TestConfigurationView(
                     label = { Text("UDP") }
                 )
             }
+
+            if (isUdp) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = udpBandwidth,
+                    onValueChange = { udpBandwidth = it },
+                    label = { Text(stringResource(R.string.udp_bandwidth_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             Text(stringResource(R.string.threads_count, threadCount.toInt()))
@@ -319,8 +332,8 @@ fun TestConfigurationView(
             Slider(
                 value = duration,
                 onValueChange = { duration = it },
-                valueRange = 5f..60f,
-                steps = 11,
+                valueRange = 1f..120f,
+                steps = 119,
                 modifier = Modifier.fillMaxWidth()
             )
             
@@ -329,7 +342,7 @@ fun TestConfigurationView(
             Button(
                 onClick = { 
                     val p = port.toIntOrNull() ?: 5201
-                    onStartClient(host, p, isUpload, threadCount.toInt(), duration.toInt(), isUdp) 
+                    onStartClient(host, p, isUpload, threadCount.toInt(), duration.toInt(), isUdp, udpBandwidth) 
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
@@ -447,7 +460,7 @@ fun ActiveTestView(
                 Text(String.format(Locale.US, "%.1f", state.avgBandwidthMbps), style = MaterialTheme.typography.titleMedium)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Min", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.min), style = MaterialTheme.typography.labelMedium)
                 Text(String.format(Locale.US, "%.1f", state.minBandwidthMbps), style = MaterialTheme.typography.titleMedium)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

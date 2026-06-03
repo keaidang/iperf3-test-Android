@@ -49,6 +49,10 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
         get() = prefs.getFloat("duration", 10f)
         set(value) = prefs.edit().putFloat("duration", value).apply()
 
+    var udpBandwidth: String
+        get() = prefs.getString("udpBandwidth", "0") ?: "0"
+        set(value) = prefs.edit().putString("udpBandwidth", value).apply()
+
     val testHistory: StateFlow<List<TestRecord>> = recordDao.getAllRecords()
         .stateIn(
             scope = viewModelScope,
@@ -60,8 +64,8 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
         engine.startServer(port)
     }
 
-    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean) {
-        engine.startClient(host, port, isUpload, threadCount, duration, isUdp) { finalState ->
+    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean, udpBandwidth: String) {
+        engine.startClient(host, port, isUpload, threadCount, duration, isUdp, udpBandwidth) { finalState ->
             saveRecord(
                 TestRecord(
                     type = "CLIENT",
@@ -73,7 +77,9 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
                     averageBandwidthMbps = finalState.avgBandwidthMbps,
                     minBandwidthMbps = finalState.minBandwidthMbps,
                     bandwidthHistoryString = finalState.bandwidthHistory.joinToString(","),
-                    protocol = if (isUdp) "UDP" else "TCP",
+                    protocol = if (isUdp) {
+                        if (udpBandwidth == "0" || udpBandwidth.isBlank()) "UDP (Unlimited)" else "UDP ($udpBandwidth)"
+                    } else "TCP",
                     duration = duration
                 )
             )
