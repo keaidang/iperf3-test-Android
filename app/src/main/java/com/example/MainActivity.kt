@@ -633,16 +633,22 @@ fun HistoryDetailDialog(record: TestRecord, onDismiss: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.average), style = MaterialTheme.typography.labelMedium)
-                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.averageBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.average), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(String.format(Locale.getDefault(), "%.1f", record.averageBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Mbps", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.max), style = MaterialTheme.typography.labelMedium)
-                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.maxBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.max), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(String.format(Locale.getDefault(), "%.1f", record.maxBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Mbps", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.min), style = MaterialTheme.typography.labelMedium)
-                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.minBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.min), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(String.format(Locale.getDefault(), "%.1f", record.minBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Mbps", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 
