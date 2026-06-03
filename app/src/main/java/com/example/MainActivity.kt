@@ -10,10 +10,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -127,6 +130,14 @@ fun MainScreen(viewModel: SpeedTestViewModel, modifier: Modifier = Modifier) {
     val history by viewModel.testHistory.collectAsStateWithLifecycle()
 
     var isClientMode by remember { mutableStateOf(viewModel.isClientMode) }
+    var selectedRecordForDetail by remember { mutableStateOf<TestRecord?>(null) }
+
+    if (selectedRecordForDetail != null) {
+        HistoryDetailDialog(
+            record = selectedRecordForDetail!!,
+            onDismiss = { selectedRecordForDetail = null }
+        )
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -162,12 +173,14 @@ fun MainScreen(viewModel: SpeedTestViewModel, modifier: Modifier = Modifier) {
                         isClientMode = it 
                         viewModel.isClientMode = it
                     },
-                    onStartClient = { host, port, up, threads ->
+                    onStartClient = { host, port, up, threads, dur, udp ->
                         viewModel.host = host
                         viewModel.port = port.toString()
                         viewModel.isUpload = up
                         viewModel.threadCount = threads.toFloat()
-                        viewModel.startClient(host, port, up, threads)
+                        viewModel.duration = dur.toFloat()
+                        viewModel.isUdp = udp
+                        viewModel.startClient(host, port, up, threads, dur, udp)
                     },
                     onStartServer = { port ->
                         viewModel.port = port.toString()
@@ -199,6 +212,7 @@ fun MainScreen(viewModel: SpeedTestViewModel, modifier: Modifier = Modifier) {
             items(history) { record ->
                 HistoryCard(
                     record = record,
+                    onClick = { selectedRecordForDetail = record },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
@@ -211,7 +225,7 @@ fun TestConfigurationView(
     viewModel: SpeedTestViewModel,
     isClientMode: Boolean,
     onModeChange: (Boolean) -> Unit,
-    onStartClient: (String, Int, Boolean, Int) -> Unit,
+    onStartClient: (String, Int, Boolean, Int, Int, Boolean) -> Unit,
     onStartServer: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -219,6 +233,8 @@ fun TestConfigurationView(
     var port by remember { mutableStateOf(viewModel.port) }
     var isUpload by remember { mutableStateOf(viewModel.isUpload) }
     var threadCount by remember { mutableFloatStateOf(viewModel.threadCount) }
+    var isUdp by remember { mutableStateOf(viewModel.isUdp) }
+    var duration by remember { mutableFloatStateOf(viewModel.duration) }
 
     Column(
         modifier = modifier
@@ -256,6 +272,7 @@ fun TestConfigurationView(
             )
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Upload / Download direction toggle
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 FilterChip(
                     selected = isUpload,
@@ -270,6 +287,23 @@ fun TestConfigurationView(
                 )
             }
             
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // TCP / UDP Protocol toggle
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                FilterChip(
+                    selected = !isUdp,
+                    onClick = { isUdp = false },
+                    label = { Text("TCP") },
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                FilterChip(
+                    selected = isUdp,
+                    onClick = { isUdp = true },
+                    label = { Text("UDP") }
+                )
+            }
+            
             Spacer(modifier = Modifier.height(16.dp))
             Text(stringResource(R.string.threads_count, threadCount.toInt()))
             Slider(
@@ -279,12 +313,23 @@ fun TestConfigurationView(
                 steps = 63,
                 modifier = Modifier.fillMaxWidth()
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(stringResource(R.string.test_duration, duration.toInt()))
+            Slider(
+                value = duration,
+                onValueChange = { duration = it },
+                valueRange = 5f..60f,
+                steps = 11,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             Button(
                 onClick = { 
                     val p = port.toIntOrNull() ?: 5201
-                    onStartClient(host, p, isUpload, threadCount.toInt()) 
+                    onStartClient(host, p, isUpload, threadCount.toInt(), duration.toInt(), isUdp) 
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
@@ -384,7 +429,7 @@ fun ActiveTestView(
                 }
             } else {
                 Text(
-                    stringResource(R.string.connecting), 
+                    stringResource(if (state.isServer) R.string.waiting_for_client else R.string.connecting), 
                     modifier = Modifier.align(Alignment.Center),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -452,27 +497,179 @@ fun ActiveTestView(
 }
 
 @Composable
-fun HistoryCard(record: TestRecord, modifier: Modifier = Modifier) {
+fun HistoryCard(record: TestRecord, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val localizedType = when(record.type) {
+        "CLIENT" -> stringResource(R.string.client)
+        "SERVER" -> stringResource(R.string.server)
+        else -> record.type
+    }
+    
+    val localizedMode = when(record.mode) {
+        "UPLOAD" -> stringResource(R.string.upload)
+        "DOWNLOAD" -> stringResource(R.string.download)
+        "LISTEN" -> stringResource(R.string.server_listen)
+        else -> record.mode
+    }
+    
+    val isZh = Locale.getDefault().language == "zh"
+    val datePattern = if (isZh) "yyyy-MM-dd HH:mm" else "MMM dd, HH:mm"
+    val date = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date(record.timestamp))
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    text = "${record.type} • ${record.mode}",
+                    text = "${localizedType} • ${localizedMode}",
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 
-                val date = SimpleDateFormat("MMM dd, HH:mm", Locale.US).format(Date(record.timestamp))
                 Text(text = date, style = MaterialTheme.typography.bodySmall)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Host: ${record.targetHost}:${record.port}")
-                Text(text = "Avg: ${String.format(Locale.US, "%.1f", record.averageBandwidthMbps)} Mbps")
+                Text(text = "${stringResource(R.string.host_label)} ${record.targetHost}:${record.port}", style = MaterialTheme.typography.bodyMedium)
+                if (record.threadCount > 0) {
+                    Text(text = "${stringResource(R.string.threads_label)} ${record.threadCount}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "${stringResource(R.string.avg_bandwidth)} ${String.format(Locale.getDefault(), "%.1f", record.averageBandwidthMbps)} Mbps",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${stringResource(R.string.max_label)} ${String.format(Locale.getDefault(), "%.1f", record.maxBandwidthMbps)} Mbps",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${stringResource(R.string.min_label)} ${String.format(Locale.getDefault(), "%.1f", record.minBandwidthMbps)} Mbps",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
+}
+
+@Composable
+fun HistoryDetailDialog(record: TestRecord, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(R.string.test_details),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                val isZh = Locale.getDefault().language == "zh"
+                val datePattern = if (isZh) "yyyy-MM-dd HH:mm:ss" else "MMM dd, yyyy HH:mm:ss"
+                val dateStr = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date(record.timestamp))
+                
+                val localizedType = when(record.type) {
+                    "CLIENT" -> stringResource(R.string.client)
+                    "SERVER" -> stringResource(R.string.server)
+                    else -> record.type
+                }
+                
+                val localizedMode = when(record.mode) {
+                    "UPLOAD" -> stringResource(R.string.upload)
+                    "DOWNLOAD" -> stringResource(R.string.download)
+                    "LISTEN" -> stringResource(R.string.server_listen)
+                    else -> record.mode
+                }
+                
+                Text(
+                    text = "${localizedType} • ${localizedMode}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(text = "${stringResource(R.string.test_time)} $dateStr", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "${stringResource(R.string.host_label)} ${record.targetHost}:${record.port}", style = MaterialTheme.typography.bodyMedium)
+                
+                if (record.threadCount > 0) {
+                    Text(text = "${stringResource(R.string.threads_count, record.threadCount)}", style = MaterialTheme.typography.bodyMedium)
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.average), style = MaterialTheme.typography.labelMedium)
+                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.averageBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.max), style = MaterialTheme.typography.labelMedium)
+                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.maxBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.min), style = MaterialTheme.typography.labelMedium)
+                        Text(String.format(Locale.getDefault(), "%.1f Mbps", record.minBandwidthMbps), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Interval details list
+                val intervals = record.bandwidthHistoryString.split(",").mapNotNull { it.toFloatOrNull() }
+                if (intervals.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.interval_details),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 180.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp)
+                    ) {
+                        intervals.forEachIndexed { index, valMbps ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("${index}.00-${index + 1}.00s", style = MaterialTheme.typography.bodySmall)
+                                Text(String.format(Locale.getDefault(), "%.1f Mbps", valMbps), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close))
+            }
+        }
+    )
 }

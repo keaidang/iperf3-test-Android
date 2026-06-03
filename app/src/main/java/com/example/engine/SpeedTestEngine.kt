@@ -18,6 +18,7 @@ import java.util.regex.Pattern
 
 data class SpeedTestState(
     val isRunning: Boolean = false,
+    val isServer: Boolean = false,
     val currentBandwidthMbps: Float = 0f,
     val minBandwidthMbps: Float = 0f,
     val maxBandwidthMbps: Float = 0f,
@@ -55,10 +56,26 @@ class SpeedTestEngine(private val context: Context) {
         return null
     }
 
+    private fun localizeError(message: String?): String? {
+        if (message == null) return null
+        val isZh = java.util.Locale.getDefault().language == "zh"
+        if (!isZh) return message
+        return when {
+            message.contains("unable to connect", ignoreCase = true) -> "无法连接到服务器，请确认地址和端口"
+            message.contains("address already in use", ignoreCase = true) -> "端口已被占用，请更换端口"
+            message.contains("connection refused", ignoreCase = true) -> "连接被拒绝，请确认服务端已开启"
+            message.contains("permission denied", ignoreCase = true) -> "执行权限不足"
+            message.contains("no route to host", ignoreCase = true) -> "无法路由到主机，请检查网络连接"
+            message.contains("error=2", ignoreCase = true) -> "找不到 iperf3 可执行文件"
+            message.contains("error=13", ignoreCase = true) -> "没有执行权限"
+            else -> message
+        }
+    }
+
     fun startServer(port: Int) {
         val job = Job()
         activeJob = job
-        _state.update { SpeedTestState(isRunning = true) }
+        _state.update { SpeedTestState(isRunning = true, isServer = true) }
 
         kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO + job) {
             try {
@@ -73,7 +90,7 @@ class SpeedTestEngine(private val context: Context) {
                 while (isActive) {
                     val line = reader.readLine() ?: break
                     if (line.contains("error", ignoreCase = true)) {
-                        _state.update { it.copy(error = line) }
+                        _state.update { it.copy(error = localizeError(line)) }
                     }
                     if (line.contains("sec") && line.contains("bits/sec")) {
                         val mbps = parseBandwidth(line)
@@ -95,7 +112,7 @@ class SpeedTestEngine(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.message) }
+                _state.update { it.copy(error = localizeError(e.message)) }
             } finally {
                 process?.destroy()
                 _state.update { it.copy(isRunning = false) }
@@ -103,18 +120,23 @@ class SpeedTestEngine(private val context: Context) {
         }
     }
 
-    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, onComplete: (SpeedTestState) -> Unit) {
+    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean, onComplete: (SpeedTestState) -> Unit) {
         val job = Job()
         activeJob = job
-        _state.update { SpeedTestState(isRunning = true) }
+        _state.update { SpeedTestState(isRunning = true, isServer = false) }
 
         kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO + job) {
             try {
                 val execPath = getExecutablePath()
                 
-                val args = mutableListOf(execPath, "-c", host, "-p", port.toString(), "-P", threadCount.toString(), "--forceflush")
+                val args = mutableListOf(execPath, "-c", host, "-p", port.toString(), "-P", threadCount.toString(), "-t", duration.toString(), "--forceflush")
                 if (!isUpload) {
                     args.add("-R")
+                }
+                if (isUdp) {
+                    args.add("-u")
+                    args.add("-b")
+                    args.add("0") // Unlimited bandwidth for UDP to measure max capacity
                 }
                 
                 val pb = ProcessBuilder(args)
@@ -127,7 +149,7 @@ class SpeedTestEngine(private val context: Context) {
                 while (isActive) {
                     val line = reader.readLine() ?: break
                     if (line.contains("error", ignoreCase = true)) {
-                        _state.update { it.copy(error = line) }
+                        _state.update { it.copy(error = localizeError(line)) }
                     }
                     // Avoid catching sender/receiver summary lines directly, but grab interval sums if parallel
                     if (line.contains("sec") && line.contains("bits/sec") && (!line.contains("sender") && !line.contains("receiver"))) {
@@ -162,7 +184,7 @@ class SpeedTestEngine(private val context: Context) {
                 }
                 
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.message) }
+                _state.update { it.copy(error = localizeError(e.message)) }
             } finally {
                 process?.destroy()
                 _state.update { it.copy(isRunning = false) }

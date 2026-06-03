@@ -41,6 +41,14 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
         get() = prefs.getBoolean("isClientMode", true)
         set(value) = prefs.edit().putBoolean("isClientMode", value).apply()
 
+    var isUdp: Boolean
+        get() = prefs.getBoolean("isUdp", false)
+        set(value) = prefs.edit().putBoolean("isUdp", value).apply()
+
+    var duration: Float
+        get() = prefs.getFloat("duration", 10f)
+        set(value) = prefs.edit().putFloat("duration", value).apply()
+
     val testHistory: StateFlow<List<TestRecord>> = recordDao.getAllRecords()
         .stateIn(
             scope = viewModelScope,
@@ -52,8 +60,8 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
         engine.startServer(port)
     }
 
-    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int) {
-        engine.startClient(host, port, isUpload, threadCount) { finalState ->
+    fun startClient(host: String, port: Int, isUpload: Boolean, threadCount: Int, duration: Int, isUdp: Boolean) {
+        engine.startClient(host, port, isUpload, threadCount, duration, isUdp) { finalState ->
             saveRecord(
                 TestRecord(
                     type = "CLIENT",
@@ -62,7 +70,11 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
                     port = port,
                     threadCount = threadCount,
                     maxBandwidthMbps = finalState.maxBandwidthMbps,
-                    averageBandwidthMbps = finalState.avgBandwidthMbps
+                    averageBandwidthMbps = finalState.avgBandwidthMbps,
+                    minBandwidthMbps = finalState.minBandwidthMbps,
+                    bandwidthHistoryString = finalState.bandwidthHistory.joinToString(","),
+                    protocol = if (isUdp) "UDP" else "TCP",
+                    duration = duration
                 )
             )
         }
@@ -78,10 +90,14 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
                    type = "SERVER",
                    mode = "LISTEN",
                    targetHost = "Local",
-                   port = 5201, // default
+                   port = port.toIntOrNull() ?: 5201,
                    threadCount = 0,
                    maxBandwidthMbps = current.maxBandwidthMbps,
-                   averageBandwidthMbps = current.avgBandwidthMbps
+                   averageBandwidthMbps = current.avgBandwidthMbps,
+                   minBandwidthMbps = current.minBandwidthMbps,
+                   bandwidthHistoryString = current.bandwidthHistory.joinToString(","),
+                   protocol = "TCP/UDP",
+                   duration = current.bandwidthHistory.size
                )
            ) 
         }

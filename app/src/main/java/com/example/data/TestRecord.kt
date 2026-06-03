@@ -13,5 +13,9 @@ data class TestRecord(
     val threadCount: Int,
     val maxBandwidthMbps: Float,
     val averageBandwidthMbps: Float,
-    val timestamp: Long = System.currentTimeMillis()
+    val minBandwidthMbps: Float = 0f,
+    val timestamp: Long = System.currentTimeMillis(),
+    val bandwidthHistoryString: String = "",
+    val protocol: String = "TCP",
+    val duration: Int = 10
 )

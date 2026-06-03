@@ -8,6 +8,7 @@
     <string name="upload">Upload</string>
     <string name="download">Download</string>
     <string name="threads_count">Threads: %1$d</string>
+    <string name="test_duration">Duration: %1$d s</string>
     <string name="start_test">Start Test</string>
     <string name="start_listener">Start Listener</string>
     <string name="stop_test">Stop Test</string>
@@ -18,4 +19,17 @@
     <string name="history">History</string>
     <string name="no_history">No test history available.</string>
     <string name="clear_history">Clear History</string>
+    <string name="waiting_for_client">Waiting for client connection...</string>
+    <string name="avg_bandwidth">Avg:</string>
+    <string name="min_label">Min:</string>
+    <string name="max_label">Peak:</string>
+    <string name="threads_label">Threads:</string>
+    <string name="min_bandwidth">Min Bandwidth:</string>
+    <string name="server_listen">Listen</string>
+    <string name="host_label">Host:</string>
+    <string name="test_details">Test Details</string>
+    <string name="test_time">Test Time:</string>
+    <string name="max_bandwidth">Max Bandwidth:</string>
+    <string name="interval_details">Interval Details</string>
+    <string name="close">Close</string>
 </resources>

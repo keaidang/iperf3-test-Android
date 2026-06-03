@@ -8,6 +8,7 @@
     <string name="upload">上传</string>
     <string name="download">下载</string>
     <string name="threads_count">并发线程: %1$d</string>
+    <string name="test_duration">测试时长: %1$d 秒</string>
     <string name="start_test">开始测速</string>
     <string name="start_listener">开启服务</string>
     <string name="stop_test">停止测速</string>
@@ -18,4 +19,17 @@
     <string name="history">历史记录</string>
     <string name="no_history">暂无测试记录</string>
     <string name="clear_history">清空记录</string>
+    <string name="waiting_for_client">等待客户端连接中...</string>
+    <string name="avg_bandwidth">平均:</string>
+    <string name="min_label">最小值:</string>
+    <string name="max_label">峰值:</string>
+    <string name="threads_label">线程数:</string>
+    <string name="min_bandwidth">极小带宽:</string>
+    <string name="server_listen">监听</string>
+    <string name="host_label">主机:</string>
+    <string name="test_details">测试详情</string>
+    <string name="test_time">测试时间:</string>
+    <string name="max_bandwidth">峰值带宽:</string>
+    <string name="interval_details">区间详情</string>
+    <string name="close">关闭</string>
 </resources>
