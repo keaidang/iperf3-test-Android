@@ -115,7 +115,9 @@ class SpeedTestEngine(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(error = localizeError(e.message)) }
+                if (isActive) {
+                    _state.update { it.copy(error = localizeError(e.message)) }
+                }
             } finally {
                 process?.destroy()
                 _state.update { it.copy(isRunning = false) }
@@ -187,7 +189,9 @@ class SpeedTestEngine(private val context: Context) {
                 }
                 
             } catch (e: Exception) {
-                _state.update { it.copy(error = localizeError(e.message)) }
+                if (isActive) {
+                    _state.update { it.copy(error = localizeError(e.message)) }
+                }
             } finally {
                 process?.destroy()
                 _state.update { it.copy(isRunning = false) }
@@ -196,8 +200,8 @@ class SpeedTestEngine(private val context: Context) {
     }
 
     fun stop() {
-        process?.destroy()
         activeJob?.cancel()
-        _state.update { it.copy(isRunning = false) }
+        process?.destroy()
+        _state.update { it.copy(isRunning = false, error = null) }
     }
 }

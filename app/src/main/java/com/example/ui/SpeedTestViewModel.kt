@@ -87,25 +87,44 @@ class SpeedTestViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun stopTest() {
-        engine.stop()
-        // If it was server, save the server record
         val current = engineState.value
+        engine.stop()
         if (current.avgBandwidthMbps > 0) {
-           saveRecord(
-               TestRecord(
-                   type = "SERVER",
-                   mode = "LISTEN",
-                   targetHost = "Local",
-                   port = port.toIntOrNull() ?: 5201,
-                   threadCount = 0,
-                   maxBandwidthMbps = current.maxBandwidthMbps,
-                   averageBandwidthMbps = current.avgBandwidthMbps,
-                   minBandwidthMbps = current.minBandwidthMbps,
-                   bandwidthHistoryString = current.bandwidthHistory.joinToString(","),
-                   protocol = "TCP/UDP",
-                   duration = current.bandwidthHistory.size
-               )
-           ) 
+            if (current.isServer) {
+                saveRecord(
+                    TestRecord(
+                        type = "SERVER",
+                        mode = "LISTEN",
+                        targetHost = "Local",
+                        port = port.toIntOrNull() ?: 5201,
+                        threadCount = 0,
+                        maxBandwidthMbps = current.maxBandwidthMbps,
+                        averageBandwidthMbps = current.avgBandwidthMbps,
+                        minBandwidthMbps = current.minBandwidthMbps,
+                        bandwidthHistoryString = current.bandwidthHistory.joinToString(","),
+                        protocol = "TCP/UDP",
+                        duration = current.bandwidthHistory.size
+                    )
+                )
+            } else {
+                saveRecord(
+                    TestRecord(
+                        type = "CLIENT",
+                        mode = if (isUpload) "UPLOAD" else "DOWNLOAD",
+                        targetHost = host,
+                        port = port.toIntOrNull() ?: 5201,
+                        threadCount = threadCount.toInt(),
+                        maxBandwidthMbps = current.maxBandwidthMbps,
+                        averageBandwidthMbps = current.avgBandwidthMbps,
+                        minBandwidthMbps = current.minBandwidthMbps,
+                        bandwidthHistoryString = current.bandwidthHistory.joinToString(","),
+                        protocol = if (isUdp) {
+                            if (udpBandwidth == "0" || udpBandwidth.isBlank()) "UDP (Unlimited)" else "UDP ($udpBandwidth)"
+                        } else "TCP",
+                        duration = current.bandwidthHistory.size
+                    )
+                )
+            }
         }
     }
 
